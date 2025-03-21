@@ -1,50 +1,67 @@
 import { useState } from "react";
-import { Upload, ArrowUp } from "lucide-react";
+import { Upload, ArrowUp, Loader2 } from "lucide-react";
 import axios from "axios";
 
-const ChatInput = ({setSelectedPage, selectedPage ,setChatResponse,setVisualizeResponse,setQuizResponse}) => {
+const ChatInput = ({setSelectedPage, selectedPage, setChatResponse, setVisualizeResponse, setQuizResponse}) => {
   const [file, setFile] = useState(null);
-  const [prompt,setPrompt] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePrompt = (e)=>{
+  const handlePrompt = (e) => {
     setPrompt(e.target.value);
   }
 
-  const submitQuery = async ()=>{
-    if(selectedPage==='Chat'){
-      // call chat api
-      try{
-        const response = await axios.post('​http://192.168.145.40:8000/api/chat​',{prompt},{
-          headers:'application/json'
-        })
+  const submitQuery = async () => {
+    if(selectedPage === 'Chat' && prompt.trim()) {
+      setIsLoading(true);
+      try {
+        const response = await axios.post('http://127.0.0.1:8000/api/chat/', {
+          prompt: prompt
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
 
-        if(response.status===200){
-          console.log(response.response);
-          setChatResponse(response.response);
+        if(response.status === 200) {
+          setChatResponse(response.data.response);
+          setPrompt(''); // Clear input after successful response
         }
       }
-      catch(err){
+      catch(err) {
         console.log(err);
+        setChatResponse("Sorry, there was an error processing your request.");
       }
-      
+      finally {
+        setIsLoading(false);
+      }
     }
-    else if(selectedPage=='Visualize'){
-      try{
-        const response = await axios.post('​http://192.168.145.40:8000/api/chat/​',{prompt},{
-          headers:'application/json'
-        })
+    else if(selectedPage === 'Visualize') {
 
-        if(response.status===200){
-          console.log(response.response);
-          setChatResponse(response.response);
+    }
+    else if(selectedPage === 'Quizzes' && prompt.trim()) {
+      setIsLoading(true);
+      try {
+        const response = await axios.post('http://127.0.0.1:8000/api/quiz/', {
+          prompt: prompt
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if(response.status === 200) {
+          setQuizResponse(response.data.response);
+          setPrompt(''); // Clear input after successful response
         }
       }
-      catch(err){
+      catch(err) {
         console.log(err);
+        setQuizResponse("Sorry, there was an error processing your request.");
       }
-
-    }
-    else if(selectedPage=='Quizzes'){
+      finally {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -60,7 +77,7 @@ const ChatInput = ({setSelectedPage, selectedPage ,setChatResponse,setVisualizeR
       />
 
       {/* Buttons Section */}
-      <div className="flex items-center  gap-4">
+      <div className="flex items-center gap-4">
         {/* Upload Button */}
         {/* <label className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 cursor-pointer">
           <Upload className="text-gray-400 w-5 h-5" />
@@ -69,20 +86,28 @@ const ChatInput = ({setSelectedPage, selectedPage ,setChatResponse,setVisualizeR
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3 flex-wrap">
-        <button className=" px-4 py-2 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600" onClick={() => setSelectedPage('Chat')}>
-          Chat
-        </button>
-        <button className=" px-4 py-2 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600" onClick={() => setSelectedPage('Visualize')}>
-          Visulaize
-        </button>
-        <button className=" px-4 py-2 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600" onClick={() => setSelectedPage('Quizzes')}>
-          Quizzes
-        </button>
+          <button className="px-4 py-2 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600" onClick={() => setSelectedPage('Chat')}>
+            Chat
+          </button>
+          <button className="px-4 py-2 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600" onClick={() => setSelectedPage('Visualize')}>
+            Visulaize
+          </button>
+          <button className="px-4 py-2 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600" onClick={() => setSelectedPage('Quizzes')}>
+            Quizzes
+          </button>
         </div>
 
         {/* Send Button */}
-        <button className="ml-auto flex items-center justify-center w-10 h-10 rounded-full bg-white text-black hover:bg-gray-300" onClick={submitQuery}>
-          <ArrowUp className="w-5 h-5" />
+        <button 
+          className={`ml-auto flex items-center justify-center w-10 h-10 rounded-full ${!isLoading && prompt.trim() ? 'bg-white text-black hover:bg-gray-300' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}
+          onClick={submitQuery}
+          disabled={isLoading || !prompt.trim()}
+        >
+          {isLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <ArrowUp className="w-5 h-5" />
+          )}
         </button>
       </div>
     </div>

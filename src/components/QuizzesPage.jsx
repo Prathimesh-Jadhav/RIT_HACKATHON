@@ -1,86 +1,6 @@
 import React, { useState } from 'react';
 
-const QuizComponent = () => {
-  const [questions] = useState([
-    {
-        "question": "Which factor does *not* significantly influence the rate of diffusion of a solute in a liquid?",
-        "options": {
-            "A": "Temperature of the liquid",
-            "B": "Size and shape of the solute molecules",
-            "C": "Density of the liquid",
-            "D": "Initial concentration of the solute"
-        },
-        "answer": "D",
-        "difficulty": 5
-    },
-    {
-        "question": "Fick's first law of diffusion relates the diffusive flux to the concentration gradient.  Which statement best describes this relationship?",
-        "options": {
-            "A": "Flux is directly proportional to the square of the concentration gradient.",
-            "B": "Flux is inversely proportional to the concentration gradient.",
-            "C": "Flux is directly proportional to the concentration gradient.",
-            "D": "Flux is independent of the concentration gradient."
-        },
-        "answer": "C",
-        "difficulty": 4
-    },
-    {
-        "question": "In facilitated diffusion, how do carrier proteins contribute to the movement of molecules across a membrane?",
-        "options": {
-            "A": "They provide energy for the movement of molecules against their concentration gradient.",
-            "B": "They bind to molecules and change shape to transport them across the membrane down their concentration gradient.",
-            "C": "They create pores in the membrane through which molecules can freely pass.",
-            "D": "They actively pump molecules across the membrane using ATP."
-        },
-        "answer": "B",
-        "difficulty": 4
-    },
-    {
-        "question": "The diffusion coefficient (D) is a measure of how easily a substance diffuses. How does temperature typically affect D?",
-        "options": {
-            "A": "Increasing temperature decreases D",
-            "B": "Increasing temperature has no effect on D",
-            "C": "Increasing temperature increases D",
-            "D": "The relationship between temperature and D is unpredictable"
-        },
-        "answer": "C",
-        "difficulty": 5
-    },
-    {
-        "question": "Which of the following statements correctly describes the difference between diffusion and effusion?",
-        "options": {
-            "A": "Diffusion is the movement of gas particles through a small opening, while effusion is the spreading of particles throughout a given volume.",
-            "B": "Effusion is the movement of gas particles through a small opening, while diffusion is the spreading of particles throughout a given volume.",
-            "C": "Diffusion and effusion are synonymous terms for the same process.",
-            "D": "Diffusion only occurs in liquids, while effusion only occurs in gases."
-        },
-        "answer": "B",
-        "difficulty": 6
-    },
-    {
-        "question": "Consider the diffusion of a solute across a membrane.  If the membrane thickness doubles, how will the rate of diffusion be affected, assuming all other factors remain constant?",
-        "options": {
-            "A": "The rate will double.",
-            "B": "The rate will be halved.",
-            "C": "The rate will remain the same.",
-            "D": "The rate will quadruple."
-        },
-        "answer": "B",
-        "difficulty": 6
-    },
-    {
-        "question": "In the context of Knudsen diffusion, which scenario leads to a higher diffusion rate?",
-        "options": {
-            "A": "Larger pore size compared to the mean free path of the diffusing molecule",
-            "B": "Smaller pore size compared to the mean free path of the diffusing molecule",
-            "C": "Pore size equal to the mean free path of the diffusing molecule",
-            "D": "Knudsen diffusion is independent of pore size."
-        },
-        "answer": "B",
-        "difficulty": 6
-    }
-  ]);
-  
+const QuizComponent = ({ questions }) => {
   // Track answered state and selected options for each question
   const [answeredState, setAnsweredState] = useState(questions.map(() => ({
     isAnswered: false,
@@ -180,7 +100,7 @@ const QuizComponent = () => {
   return (
     <div className="max-w-lg mx-auto p-6 bg-gray-900 rounded-lg shadow-lg text-gray-100">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Diffusion Quiz</h1>
+        <h1 className="text-xl font-bold">Quiz</h1>
         <span className="text-sm font-medium text-blue-400">
           {answeredState.filter(state => state.isAnswered).length} of {questions.length} answered
         </span>
@@ -233,6 +153,85 @@ const QuizComponent = () => {
 
 const QuizzesPage = () => {
   const [response, setResponse] = useState(true); // Changed to true to show the quiz immediately
+  const [quizData, setQuizData] = useState([
+    {
+        "question": "Which factor does *not* significantly influence the rate of diffusion of a solute in a liquid?",
+        "options": {
+            "A": "Temperature of the liquid",
+            "B": "Size and shape of the solute molecules",
+            "C": "Density of the liquid",
+            "D": "Initial concentration of the solute"
+        },
+        "answer": "D",
+        "difficulty": 5
+    },
+    {
+        "question": "Fick's first law of diffusion relates the diffusive flux to the concentration gradient.  Which statement best describes this relationship?",
+        "options": {
+            "A": "Flux is directly proportional to the square of the concentration gradient.",
+            "B": "Flux is inversely proportional to the concentration gradient.",
+            "C": "Flux is directly proportional to the concentration gradient.",
+            "D": "Flux is independent of the concentration gradient."
+        },
+        "answer": "C",
+        "difficulty": 4
+    },
+    {
+        "question": "In facilitated diffusion, how do carrier proteins contribute to the movement of molecules across a membrane?",
+        "options": {
+            "A": "They provide energy for the movement of molecules against their concentration gradient.",
+            "B": "They bind to molecules and change shape to transport them across the membrane down their concentration gradient.",
+            "C": "They create pores in the membrane through which molecules can freely pass.",
+            "D": "They actively pump molecules across the membrane using ATP."
+        },
+        "answer": "B",
+        "difficulty": 4
+    },
+    {
+        "question": "The diffusion coefficient (D) is a measure of how easily a substance diffuses. How does temperature typically affect D?",
+        "options": {
+            "A": "Increasing temperature decreases D",
+            "B": "Increasing temperature has no effect on D",
+            "C": "Increasing temperature increases D",
+            "D": "The relationship between temperature and D is unpredictable"
+        },
+        "answer": "C",
+        "difficulty": 5
+    },
+    {
+        "question": "Which of the following statements correctly describes the difference between diffusion and effusion?",
+        "options": {
+            "A": "Diffusion is the movement of gas particles through a small opening, while effusion is the spreading of particles throughout a given volume.",
+            "B": "Effusion is the movement of gas particles through a small opening, while diffusion is the spreading of particles throughout a given volume.",
+            "C": "Diffusion and effusion are synonymous terms for the same process.",
+            "D": "Diffusion only occurs in liquids, while effusion only occurs in gases."
+        },
+        "answer": "B",
+        "difficulty": 6
+    },
+    {
+        "question": "Consider the diffusion of a solute across a membrane.  If the membrane thickness doubles, how will the rate of diffusion be affected, assuming all other factors remain constant?",
+        "options": {
+            "A": "The rate will double.",
+            "B": "The rate will be halved.",
+            "C": "The rate will remain the same.",
+            "D": "The rate will quadruple."
+        },
+        "answer": "B",
+        "difficulty": 6
+    },
+    {
+        "question": "In the context of Knudsen diffusion, which scenario leads to a higher diffusion rate?",
+        "options": {
+            "A": "Larger pore size compared to the mean free path of the diffusing molecule",
+            "B": "Smaller pore size compared to the mean free path of the diffusing molecule",
+            "C": "Pore size equal to the mean free path of the diffusing molecule",
+            "D": "Knudsen diffusion is independent of pore size."
+        },
+        "answer": "B",
+        "difficulty": 6
+    }
+  ]);
   
   return (
     <div className="flex flex-col xl:min-w-[700px] xl:max-w-[700px] max-xl:w-full py-8 px-6 min-h-[72%] max-h-[72%] overflow-auto bg-gray-800 mt-10">
@@ -248,7 +247,7 @@ const QuizzesPage = () => {
           <p>Test your knowledge with playing quizzes</p>
         </div>
       ) : (
-        <QuizComponent />
+        <QuizComponent questions={quizData} />
       )}
     </div>
   );
