@@ -14,10 +14,10 @@ const Chatbot = () => {
   // Suggested questions for users
   const suggestedQuestions = [
     "What can this AI assistant help me with?",
-    "How do I analyze data with this tool?",
+    "Want to create your Question paper?",
     "Can you summarize a document for me?",
-    "What file formats do you support?",
-    "How do I export conversation history?"
+    "Want to understand a concept?",
+    "Want to learn a point in syllabus"
   ];
 
   const handleInputChange = (e) => {

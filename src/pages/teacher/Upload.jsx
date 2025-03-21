@@ -81,7 +81,7 @@ export default function UploadPage() {
         formData.append("file", file);
 
         try {
-            const response = await axios.post("http://127.0.0.1:8000/api/upload_pdf/", formData, {
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/upload_pdf/`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data"
                 }
