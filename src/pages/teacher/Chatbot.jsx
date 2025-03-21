@@ -1,12 +1,15 @@
 import React, { useState, useRef } from 'react';
+import axios from 'axios';
+import MarkdownPreview from '@uiw/react-markdown-preview';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const messageRefs = useRef({});
   
   // Suggested questions for users
   const suggestedQuestions = [
@@ -21,62 +24,39 @@ const Chatbot = () => {
     setInput(e.target.value);
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setUploadedFile(file);
-      // Add a system message showing file was uploaded
-      setMessages(prev => [...prev, {
-        type: 'system',
-        content: `File uploaded: ${file.name}`
-      }]);
-    }
-  };
-
   const handleSuggestedQuestion = (question) => {
     setInput(question);
   };
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
-    if (!input.trim() && !uploadedFile) return;
+    if (!input.trim()) return;
 
     // Add user message to chat
-    const userMessage = input || (uploadedFile ? `I've uploaded ${uploadedFile.name}` : '');
-    setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
+    setMessages(prev => [...prev, { type: 'user', content: input }]);
+    
+    // Store the message and clear input field
+    const userMessage = input;
     setInput('');
     
     // Set loading state
     setIsLoading(true);
 
     try {
-      // Here you would normally make an API call to your chatbot backend
-      // For demonstration, we're simulating a response
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      let responseContent = '';
-      if (uploadedFile) {
-        responseContent = `I've analyzed ${uploadedFile.name}. What would you like to know about it?`;
-        setUploadedFile(null); // Clear the file after processing
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''; // Reset the file input
-        }
-      } else {
-        // Create custom responses based on common questions
-        if (userMessage.toLowerCase().includes("help")) {
-          responseContent = "I can help you analyze documents, answer questions, summarize content, and provide information on various topics. Just ask away or upload a file!";
-        } else if (userMessage.toLowerCase().includes("file format")) {
-          responseContent = "I support most common file formats including PDF, DOCX, TXT, CSV, XLSX, and JSON. Just upload your file using the + button.";
-        } else if (userMessage.toLowerCase().includes("export")) {
-          responseContent = "To export your conversation history, look for the download icon in the top right corner of the chat interface.";
-        } else {
-          responseContent = `Thanks for your message: "${userMessage}". This is a simulated response.`;
-        }
-      }
+      // Make the API call using axios
+      const response = await axios.post('http://192.168.133.40:8000/api/chat/', {
+        prompt: userMessage
+      });
       
       // Add chatbot response
-      setMessages(prev => [...prev, { type: 'bot', content: responseContent }]);
+      setMessages(prev => [...prev, { 
+        type: 'bot', 
+        content: response.data.response || response.data.message || response.data,
+        id: `response-${Date.now()}`
+      }]);
     } catch (error) {
+      console.error('Error processing request:', error);
+      
       // Add error message
       setMessages(prev => [...prev, {
         type: 'system',
@@ -86,6 +66,99 @@ const Chatbot = () => {
       setIsLoading(false);
     }
   };
+
+  // Generate PDF from a specific message
+// Generate PDF from a specific message
+// Generate PDF from a specific message
+const generatePDF = async (messageId, content) => {
+  try {
+    const messageElement = messageRefs.current[messageId];
+    if (!messageElement) return;
+
+    // Show loading indicator
+    setIsLoading(true);
+    
+    // Create a new jsPDF instance (with white background)
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    
+    // Simple markdown parsing for common formats
+    let parsedContent = content
+      // Handle bold text (**text**)
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      // Handle italics (*text* or _text_)
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/_(.*?)_/g, '$1')
+      // Handle code blocks (`code`)
+      .replace(/`(.*?)`/g, '$1')
+      // Handle headers (remove # symbols)
+      .replace(/^#{1,6}\s+(.*)$/gm, '$1')
+      // Handle bullet lists (- item or * item)
+      .replace(/^[-*]\s+(.*)$/gm, '• $1')
+      // Handle numbered lists (1. item)
+      .replace(/^\d+\.\s+(.*)$/gm, '• $1')
+      // Handle links ([text](url))
+      .replace(/\[(.*?)\]\((.*?)\)/g, '$1');
+    
+    // Add a title to the PDF
+    pdf.setTextColor(0, 0, 0); // Black text
+    pdf.setFontSize(16);
+    pdf.text('AI Assistant Response', 15, 15);
+    
+    // Add timestamp
+    pdf.setFontSize(10);
+    pdf.setTextColor(100, 100, 100); // Gray text
+    const timestamp = new Date().toLocaleString();
+    pdf.text(`Generated on: ${timestamp}`, 15, 22);
+    
+    // Add a horizontal line
+    pdf.setDrawColor(200, 200, 200); // Light gray line
+    pdf.line(15, 25, 195, 25);
+    
+    // Set font for main content
+    pdf.setTextColor(0, 0, 0); // Black text
+    pdf.setFontSize(11);
+    
+    // Split content into lines to avoid text running off the page
+    // Use a narrower width to ensure content fits within margins
+    const textLines = pdf.splitTextToSize(parsedContent, 170);
+    
+    // Add text content starting from position after the header
+    let verticalPosition = 30;
+    
+    // Process lines in chunks to avoid exceeding page bounds
+    for (let i = 0; i < textLines.length; i++) {
+      // If we're about to exceed page height, add a new page
+      if (verticalPosition > 270) {
+        pdf.addPage();
+        verticalPosition = 20; // Reset position for new page
+      }
+      
+      pdf.text(textLines[i], 15, verticalPosition);
+      verticalPosition += 7; // Increment vertical position for next line
+    }
+    
+    // Add page numbers at the bottom of each page
+    const totalPages = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(10);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text(`Page ${i} of ${totalPages}`, pdf.internal.pageSize.width / 2, 287, { align: 'center' });
+    }
+    
+    // Download the PDF
+    pdf.save(`ai-response-${new Date().toISOString().slice(0, 10)}.pdf`);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    // Show error message to user
+    setMessages(prev => [...prev, {
+      type: 'system',
+      content: 'Error generating PDF. Please try again.'
+    }]);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Scroll to bottom whenever messages change
   React.useEffect(() => {
@@ -104,7 +177,7 @@ const Chatbot = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               <p className="text-xl mb-2 font-medium">Welcome to the AI Assistant!</p>
-              <p className="text-gray-400">Ask a question or upload a document to get started</p>
+              <p className="text-gray-400">Ask a question to get started</p>
             </div>
             
             <div className="max-w-lg mx-auto">
@@ -136,6 +209,7 @@ const Chatbot = () => {
                 </div>
               )}
               <div 
+                ref={el => message.id && (messageRefs.current[message.id] = el)}
                 className={`max-w-xs md:max-w-md lg:max-w-lg xl:max-w-xl p-3 rounded-lg shadow ${
                   message.type === 'user' 
                     ? 'bg-blue-500 text-white rounded-tr-none' 
@@ -144,7 +218,28 @@ const Chatbot = () => {
                     : 'bg-gray-800 border border-gray-700 text-gray-200 rounded-tl-none'
                 }`}
               >
-                {message.content}
+                <div className="relative">
+                  <MarkdownPreview
+                    source={message.content}
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: '#fff'
+                    }}
+                  />
+                  
+                  {/* PDF Download button for bot messages */}
+                  {message.type === 'bot' && (
+                    <button
+                      onClick={() => generatePDF(message.id, message.content)}
+                      className="absolute top-0 right-0 bg-gray-700 hover:bg-gray-600 text-gray-300 p-1 rounded-full text-xs transition-colors"
+                      title="Download as PDF"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
               {message.type === 'user' && (
                 <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center ml-2">
@@ -161,14 +256,39 @@ const Chatbot = () => {
 
       {/* Input area */}
       <div className="border-t border-gray-700 p-4 bg-gray-800">
-        <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
-          <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current.click()}
-              className="bg-gray-700 hover:bg-gray-600 p-2 rounded-full transition-colors"
-              title="Upload file"
-            >
+        <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+          <input
+            type="text"
+            value={input}
+            onChange={handleInputChange}
+            placeholder="Type your message here..."
+            className="flex-1 p-3 border border-gray-600 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400"
+            disabled={isLoading}
+          />
+          
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full disabled:opacity-50 transition-colors"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle 
+                  className="opacity-25" 
+                  cx="12" 
+                  cy="12" 
+                  r="10" 
+                  stroke="currentColor" 
+                  strokeWidth="4" 
+                  fill="none" 
+                />
+                <path 
+                  className="opacity-75" 
+                  fill="currentColor" 
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" 
+                />
+              </svg>
+            ) : (
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 className="h-5 w-5" 
@@ -180,89 +300,11 @@ const Chatbot = () => {
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
                   strokeWidth={2} 
-                  d="M12 4v16m8-8H4" 
+                  d="M14 5l7 7m0 0l-7 7m7-7H3" 
                 />
               </svg>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </button>
-            
-            <input
-              type="text"
-              value={input}
-              onChange={handleInputChange}
-              placeholder="Type your message here..."
-              className="flex-1 p-3 border border-gray-600 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400"
-              disabled={isLoading}
-            />
-            
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full disabled:opacity-50 transition-colors"
-              disabled={isLoading && !uploadedFile}
-            >
-              {isLoading ? (
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle 
-                    className="opacity-25" 
-                    cx="12" 
-                    cy="12" 
-                    r="10" 
-                    stroke="currentColor" 
-                    strokeWidth="4" 
-                    fill="none" 
-                  />
-                  <path 
-                    className="opacity-75" 
-                    fill="currentColor" 
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" 
-                  />
-                </svg>
-              ) : (
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-5 w-5" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M14 5l7 7m0 0l-7 7m7-7H3" 
-                  />
-                </svg>
-              )}
-            </button>
-          </div>
-          
-          {uploadedFile && (
-            <div className="flex items-center text-sm text-gray-300 bg-gray-700 p-2 rounded">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span className="truncate">{uploadedFile.name}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setUploadedFile(null);
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                  }
-                }}
-                className="ml-2 text-gray-400 hover:text-red-400 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
+            )}
+          </button>
         </form>
       </div>
     </div>
