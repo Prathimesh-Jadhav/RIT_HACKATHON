@@ -47,7 +47,7 @@ const Home = () => {
             <div className="relative z-10 max-w-4xl backdrop-filter backdrop-blur-sm bg-gray-900 bg-opacity-60 p-10 rounded-2xl border border-gray-800 shadow-2xl">
                 <div className="text-center">
                     <h1 className="text-5xl md:text-6xl font-bold leading-snug mb-6">
-                        Recreate your Moodle with AI
+                        Recreate your LMS with AI
                     </h1>
                     <motion.h1 
                         className="text-5xl md:text-6xl font-bold leading-tight mb-6 text-blue-400"

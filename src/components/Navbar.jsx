@@ -6,7 +6,7 @@ const Navbar = () => {
         <h1 className='text-2xl font-bold'>SmartEdu</h1>
         <div>
             <button className='mr-4'>Hero</button>
-            <button className='mr-4'>Features</button>
+            <button className='mr-4'><a href="#features">Features</a></button>
         </div>
     </div>
   )

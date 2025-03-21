@@ -6,7 +6,7 @@ import Feautres from '../sections/Feautres'
 
 const LandingPage = () => {
   return (
-    <div className='bg-gray-900 text-white'>
+    <div className='bg-gray-900 text-white pb-16'>
       <Navbar />
       <Home />
       <Feautres/>
