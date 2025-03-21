@@ -3,11 +3,12 @@ import { Upload, Button, message } from "antd";
 import { UploadOutlined, DownloadOutlined, EyeOutlined, FileTextOutlined, DeleteOutlined } from "@ant-design/icons";
 import axios from "axios";
 import {toast} from 'react-toastify';
+import { jsPDF } from 'jspdf';
 
 export default function UploadPage() {
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
-    const [generatedPPTs, setGeneratedPPTs] = useState([]);
+    const [syllabusData, setSyllabusData] = useState(null);
 
     const handleFileChange = (info) => {
         if (info.file) {
@@ -30,7 +31,45 @@ export default function UploadPage() {
         return false;
     };
 
-    const handleUpload = () => {
+    const downloadChapterContent = (chapterTitle, content) => {
+        const pdf = new jsPDF();
+        
+        // Add title
+        pdf.setFontSize(16);
+        pdf.text(chapterTitle, 20, 20);
+        
+        // Add content
+        pdf.setFontSize(12);
+        let y = 40;
+        
+        content.subpoints.forEach(point => {
+            // Add subpoint title
+            pdf.setFont(undefined, 'bold');
+            if (y > 270) {
+                pdf.addPage();
+                y = 20;
+            }
+            pdf.text(point.title, 20, y);
+            y += 10;
+            
+            // Add description with word wrap
+            pdf.setFont(undefined, 'normal');
+            const splitText = pdf.splitTextToSize(point.description, 170);
+            splitText.forEach(line => {
+                if (y > 270) {
+                    pdf.addPage();
+                    y = 20;
+                }
+                pdf.text(line, 20, y);
+                y += 7;
+            });
+            y += 10;
+        });
+
+        pdf.save(`${chapterTitle}.pdf`);
+    };
+
+    const handleUpload = async () => {
         if (!file) {
             message.warning("Please select a file first");
             return;
@@ -38,48 +77,34 @@ export default function UploadPage() {
 
         setUploading(true);
 
-        setTimeout(async () => {
-            console.log("Processing file:", file.name);
-            const formData = new FormData();
-            formData.append("file", file);
+        const formData = new FormData();
+        formData.append("file", file);
 
-            //send file to backend:
-            try{
-                const response = await axios.post("http://localhost:3000/upload", formData, {
-                    headers: {
-                        "Content-Type": "multipart/form-data"
-                    }
-                });
-
-                if(response.status !== 200){
-                    throw new Error("Failed to process the file.");
+        try {
+            const response = await axios.post("http://127.0.0.1:8000/api/upload_pdf/", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
                 }
+            });
 
-                const extractedText = response.data.extractedText;
-                console.log("Extracted text:", extractedText);
-
-                
-            }
-            catch(error){
-                console.error(error);
-                toast.error("Failed to process the file.");
-                setUploading(false);
-                return;
+            if (response.status !== 200) {
+                throw new Error("Failed to process the file.");
             }
 
-            const mockGeneratedPPTs = [
-                { unit: "Unit 1", fileName: "Unit_1_Presentation.pptx" },
-                { unit: "Unit 2", fileName: "Unit_2_Presentation.pptx" },
-                { unit: "Unit 3", fileName: "Unit_3_Presentation.pptx" }
-            ];
-            setGeneratedPPTs(mockGeneratedPPTs);
+            const parsedData = JSON.parse(response.data.data);
+            setSyllabusData(parsedData);
+            message.success("Syllabus processed successfully!");
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to process the file.");
+        } finally {
             setUploading(false);
-            message.success("PPTs generated successfully!");
-        }, 2000);
+        }
     };
 
     const handleDeleteUploadedFile = () => {
-        setFile(null); // Clear the uploaded file
+        setFile(null);
+        setSyllabusData(null);
         message.success("Uploaded file deleted successfully!");
     };
 
@@ -137,21 +162,21 @@ export default function UploadPage() {
                                 style={{ backgroundColor: "#2196F3", color: "white", marginTop: "10px" }}
                                 className="h-12 text-white font-semibold"
                             >
-                                {uploading ? "Processing..." : "Generate Presentations"}
+                                {uploading ? "Processing..." : "Process Syllabus"}
                             </Button>
                         </div>
                     </div>
 
-                    {/* Generated PPTs Section */}
+                    {/* Generated Content Section */}
                     <div className="bg-gray-800 rounded-2xl shadow-lg overflow-hidden flex flex-col h-full">
                         <div className="bg-blue-500 p-4">
-                            <h2 className="text-lg font-semibold text-white text-center">Generated Presentations</h2>
+                            <h2 className="text-lg font-semibold text-white text-center">Generated Content</h2>
                         </div>
 
                         <div className="p-6 flex-grow overflow-auto" style={{ maxHeight: '400px' }}>
-                            {generatedPPTs.length > 0 ? (
+                            {syllabusData ? (
                                 <ul className="divide-y divide-gray-700">
-                                    {generatedPPTs.map((item, index) => (
+                                    {Object.entries(syllabusData).map(([chapter, content], index) => (
                                         <li key={index} className="py-4 first:pt-1 last:pb-1">
                                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                                 <div className="flex items-center min-w-0">
@@ -159,28 +184,18 @@ export default function UploadPage() {
                                                         <FileTextOutlined className="text-lg text-indigo-400" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h3 className="font-medium text-gray-200 truncate">{item.unit}</h3>
-                                                        <p className="text-xs text-gray-400 truncate">{item.fileName}</p>
+                                                        <h3 className="font-medium text-gray-200 truncate">{chapter}</h3>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-3 w-full sm:w-auto flex-shrink-0">
-                                                    <Button
-                                                        icon={<EyeOutlined />}
-                                                        onClick={() => message.info(`Previewing ${item.fileName}`)}
-                                                        size="middle"
-                                                    >
-                                                        Preview
-                                                    </Button>
-                                                    <Button
-                                                        icon={<DownloadOutlined />}
-                                                        type="primary"
-                                                        onClick={() => message.success(`Downloading ${item.fileName}`)}
-                                                        style={{ backgroundColor: "#4f46e5" }}
-                                                        size="middle"
-                                                    >
-                                                        Download
-                                                    </Button>
-                                                </div>
+                                                <Button
+                                                    icon={<DownloadOutlined />}
+                                                    type="primary"
+                                                    onClick={() => downloadChapterContent(chapter, content)}
+                                                    style={{ backgroundColor: "#4f46e5" }}
+                                                    size="middle"
+                                                >
+                                                    Download
+                                                </Button>
                                             </div>
                                         </li>
                                     ))}
@@ -188,7 +203,7 @@ export default function UploadPage() {
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
                                     <FileTextOutlined className="text-5xl mb-4" />
-                                    <p className="text-base">No presentations generated yet</p>
+                                    <p className="text-base">No content generated yet</p>
                                     <p className="text-xs mt-2">Upload a document to get started</p>
                                 </div>
                             )}
