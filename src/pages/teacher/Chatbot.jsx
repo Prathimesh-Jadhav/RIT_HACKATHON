@@ -44,7 +44,7 @@ const Chatbot = () => {
 
     try {
       // Make the API call using axios
-      const response = await axios.post('http://192.168.133.40:8000/api/chat/', {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/chat/`, {
         prompt: userMessage
       });
       

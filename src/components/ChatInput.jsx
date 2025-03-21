@@ -15,7 +15,7 @@ const ChatInput = ({setSelectedPage, selectedPage, setChatResponse, setVisualize
     if(selectedPage === 'Chat' && prompt.trim()) {
       setIsLoading(true);
       try {
-        const response = await axios.post('http://127.0.0.1:8000/api/chat/', {
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/chat/`, {
           prompt: prompt
         }, {
           headers: {
@@ -40,28 +40,8 @@ const ChatInput = ({setSelectedPage, selectedPage, setChatResponse, setVisualize
 
     }
     else if(selectedPage === 'Quizzes' && prompt.trim()) {
-      setIsLoading(true);
-      try {
-        const response = await axios.post('http://127.0.0.1:8000/api/quiz/', {
-          prompt: prompt
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if(response.status === 200) {
-          setQuizResponse(response.data.response);
-          setPrompt(''); // Clear input after successful response
-        }
-      }
-      catch(err) {
-        console.log(err);
-        setQuizResponse("Sorry, there was an error processing your request.");
-      }
-      finally {
-        setIsLoading(false);
-      }
+      console.log('Generating quiz for:', prompt);
+        setQuizResponse(prompt)
     }
   }
 
