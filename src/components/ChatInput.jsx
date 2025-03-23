@@ -69,9 +69,6 @@ const ChatInput = ({setSelectedPage, selectedPage, setChatResponse, setVisualize
           <button className="px-4 py-2 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600" onClick={() => setSelectedPage('Chat')}>
             Chat
           </button>
-          <button className="px-4 py-2 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600" onClick={() => setSelectedPage('Visualize')}>
-            Visulaize
-          </button>
           <button className="px-4 py-2 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600" onClick={() => setSelectedPage('Quizzes')}>
             Quizzes
           </button>

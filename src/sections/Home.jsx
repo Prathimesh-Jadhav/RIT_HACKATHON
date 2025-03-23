@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 const words = ["Effortless Notes", "Smart Understanding", "Engaging Quizzes"];
 
@@ -61,9 +62,11 @@ const Home = () => {
                     </p>
 
                     <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10">
-                        <button className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-md transition-colors">
-                            Get Started
-                        </button>
+                        <Link to="/layout/student/chatbot">
+                            <button className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-md transition-colors">
+                                Get Started
+                            </button>
+                        </Link>
                     </div>
                 </div>
             </div>

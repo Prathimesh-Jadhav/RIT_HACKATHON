@@ -9,8 +9,9 @@ export default function UploadPage() {
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [syllabusData, setSyllabusData] = useState(null);
+    const [uploadingNotes, setUploadingNotes] = useState(false);
 
-    const handleFileChange = (info) => {
+    const handleFileChange = (info) => {    
         if (info.file) {
             setFile(info.file);
             console.log('File selected:', info.file.name);
@@ -102,10 +103,57 @@ export default function UploadPage() {
         }
     };
 
+    const handleUploadFile = async (chapterTitle, content) => {
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/upload_file/`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            });
+
+            if (response.status === 200) {
+                message.success("File uploaded successfully!");
+            } else {
+                throw new Error("Failed to upload file");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to upload file");
+        }
+    };
+
     const handleDeleteUploadedFile = () => {
         setFile(null);
         setSyllabusData(null);
         message.success("Uploaded file deleted successfully!");
+    };
+
+    const handleUploadNotes = async (file) => {
+        setUploadingNotes(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/upload_file/`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            });
+
+            if (response.status === 200) {
+                message.success("Notes uploaded successfully!");
+            } else {
+                throw new Error("Failed to upload notes");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to upload notes");
+        } finally {
+            setUploadingNotes(false);
+        }
     };
 
     return (
@@ -187,15 +235,17 @@ export default function UploadPage() {
                                                         <h3 className="font-medium text-gray-200 truncate">{chapter}</h3>
                                                     </div>
                                                 </div>
-                                                <Button
-                                                    icon={<DownloadOutlined />}
-                                                    type="primary"
-                                                    onClick={() => downloadChapterContent(chapter, content)}
-                                                    style={{ backgroundColor: "#4f46e5" }}
-                                                    size="middle"
-                                                >
-                                                    Download
-                                                </Button>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        icon={<DownloadOutlined />}
+                                                        type="primary"
+                                                        onClick={() => downloadChapterContent(chapter, content)}
+                                                        style={{ backgroundColor: "#4f46e5" }}
+                                                        size="middle"
+                                                    >
+                                                        Download
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </li>
                                     ))}
@@ -209,6 +259,28 @@ export default function UploadPage() {
                             )}
                         </div>
                     </div>
+                </div>
+
+                {/* Upload Notes Button */}
+                <div className="mt-8 flex justify-center">
+                    <Upload
+                        accept=".pdf,.doc,.docx"
+                        showUploadList={false}
+                        beforeUpload={(file) => {
+                            handleUploadNotes(file);
+                            return false;
+                        }}
+                    >
+                        <Button
+                            type="primary"
+                            icon={<UploadOutlined />}
+                            loading={uploadingNotes}
+                            style={{ backgroundColor: "#4f46e5", height: "48px" }}
+                            className="text-white font-semibold px-8"
+                        >
+                            Upload Notes
+                        </Button>
+                    </Upload>
                 </div>
             </div>
 

@@ -15,7 +15,7 @@
 
 /* Track (background of the scrollbar) */
 ::-webkit-scrollbar-track {
-    background: ; /* Light gray */
+    background: #f1f1f1; /* Light gray */
     border-radius: 10px;
 }
 
